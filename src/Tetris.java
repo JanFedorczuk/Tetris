@@ -38,7 +38,11 @@ public class Tetris
 
     private TetrisActionListener tetrisActionListener = new TetrisActionListener();
 
-    public Tetris(GameJFrame gameJFrame, JPanel matrixPanel, int time, Timer timer, JLabel scoreValue, JPanel textPanel)
+    private int matrixPanelX;
+    private int y;
+
+    public Tetris(GameJFrame gameJFrame, JPanel matrixPanel, int time, Timer timer, JLabel scoreValue, JPanel textPanel,
+    int matrixPanelX, int y)
     {
         this.gameJFrame = gameJFrame;
         this.matrixPanel = matrixPanel;
@@ -46,6 +50,8 @@ public class Tetris
         this.timer = timer;
         this.scoreValue = scoreValue;
         this.textPanel = textPanel;
+        this.matrixPanelX = matrixPanelX;
+        this.y = y;
     }
 
     private class TetrisActionListener implements ActionListener
@@ -145,11 +151,15 @@ public class Tetris
         {
             for (int x = 0; x < 10; x++)
             {
-                Rectangle2D rect = new Rectangle2D.Double((x * 30), ((y - 1) * 30), 30, 30);
+                Rectangle2D rect = new Rectangle2D.Double((x * (matrixPanelX / 10)), ((y - 1) * (matrixPanelX / 10)),
+                        (matrixPanelX / 10), (matrixPanelX / 10));
+
+                g2.setPaint(Color.BLACK);
                 g2.draw(rect);
 
                 g2.setPaint((Color) arrays[i][1]);
                 g2.fill(rect);
+
                 g2.setPaint(Color.BLACK);
                 g2.draw(rect);
                 i++;
@@ -157,18 +167,18 @@ public class Tetris
         }
     }
 
-    //private void drawNumbers(Graphics2D g2)
-    //{
-    //    int i = 10;
-    //    for (int y = 1; y < 21; y++)
-    //    {
-    //        for (int x = 0; x < 10; x++)
-    //        {
-    //            g2.drawString(String.valueOf(i), (x * 30) + 7, ((y - 1) * 30) + 15);
-    //            i++;
-    //        }
-    //    }
-    //}
+    private void drawNumbers(Graphics2D g2)
+    {
+        int i = 10;
+        for (int y = 1; y < 21; y++)
+        {
+            for (int x = 0; x < 10; x++)
+            {
+                g2.drawString(String.valueOf(i), (x * 30) + 7, ((y - 1) * 30) + 15);
+                i++;
+            }
+        }
+    }
 
     public void start()
     {
@@ -186,7 +196,7 @@ public class Tetris
         initialiseArrays();
 
         MatrixPainter matrixPainter = new MatrixPainter();
-        matrixPainter.setPreferredSize(new Dimension(301, 601));
+        matrixPainter.setPreferredSize(new Dimension(matrixPanelX, y));
         matrixPanel.add(matrixPainter);
 
         timer.addActionListener(tetrisActionListener);
@@ -291,17 +301,17 @@ public class Tetris
                 break;
 
             case 2:
-                score = score + 200;
+                score = score + 150;
                 scoreValue.setText(Integer.toString(score));
                 break;
 
             case 3:
-                score = score + 400;
+                score = score + 450;
                 scoreValue.setText(Integer.toString(score));
                 break;
 
             case 4:
-                score = score + 800;
+                score = score + 1350;
                 scoreValue.setText(Integer.toString(score));
                 break;
         }
@@ -330,7 +340,6 @@ public class Tetris
         {
             time = time - 10;
         }
-        System.out.println(time);
     }
 
     private ArrayList<Boolean> fillBestScores()
@@ -340,17 +349,17 @@ public class Tetris
         {
             bestScores.clear();
         }
-        if(MainMenuJFrame.highestScoresJFrame.getScore1() != 0)
+        if(MainMenuJFrame.highestScoresJFrame.getFirstScore() != 0)
         {
-            bestScores.add(MainMenuJFrame.highestScoresJFrame.getScore1());
+            bestScores.add(MainMenuJFrame.highestScoresJFrame.getFirstScore());
 
-            if(MainMenuJFrame.highestScoresJFrame.getScore2() != 0)
+            if(MainMenuJFrame.highestScoresJFrame.getSecondScore() != 0)
             {
-                bestScores.add(MainMenuJFrame.highestScoresJFrame.getScore2());
+                bestScores.add(MainMenuJFrame.highestScoresJFrame.getSecondScore());
 
-                if(MainMenuJFrame.highestScoresJFrame.getScore3() != 0)
+                if(MainMenuJFrame.highestScoresJFrame.getThirdScore() != 0)
                 {
-                    bestScores.add(MainMenuJFrame.highestScoresJFrame.getScore3());
+                    bestScores.add(MainMenuJFrame.highestScoresJFrame.getThirdScore());
                 }
             }
         }
@@ -388,17 +397,15 @@ public class Tetris
         }
         else
         {
-            MessageThatScoreIsInTopThree firstMessage =
-                    createTop3MessageAndAddListeners(booleanArrayList, trueValueOccurrences, secondMessage);
+            MessageThatScoreIsInTopThree firstMessage = createTop3MessageAndAddListeners(booleanArrayList, trueValueOccurrences, secondMessage);
+            firstMessage.setVisible(true);
         }
     }
 
     private MessageThatScoreIsInTopThree createTop3MessageAndAddListeners
             (ArrayList<Boolean> booleanArrayList, int trueValuesOccurrences, MessageThatPlayerLostTheGame secondMessage)
     {
-        secondMessage.setVisible(false);
         MessageThatScoreIsInTopThree firstMessage = new MessageThatScoreIsInTopThree();
-        gameJFrame.setEnabled(false);
         firstMessage.addWindowListener(new WindowAdapter()
         {
             @Override
@@ -413,7 +420,10 @@ public class Tetris
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                if(!(firstMessage.getNickInput().getText().replaceAll("\\s","").equals("")))
+                {
+                    compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                }
             }
         });
 
@@ -437,7 +447,18 @@ public class Tetris
             {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
                 {
-                    compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                    if(!(firstMessage.getNickInput().getText().replaceAll("\\s","").equals("")))
+                    {
+                        compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                    }
+                }
+                if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W)
+                {
+                    firstMessage.getNickInput().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
+                {
+                    firstMessage.getOkButton().requestFocus();
                 }
             }
         });
@@ -457,7 +478,18 @@ public class Tetris
                 {
                     if (e.getKeyCode() == KeyEvent.VK_ENTER)
                     {
-                        compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                        if(!(firstMessage.getNickInput().getText().replaceAll("\\s","").equals("")))
+                        {
+                            compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                        }
+                    }
+                    if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W)
+                    {
+                        firstMessage.getNickInput().requestFocus();
+                    }
+                    if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
+                    {
+                        firstMessage.getNickInput().requestFocus();
                     }
                 }
             });
@@ -477,7 +509,18 @@ public class Tetris
             {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
                 {
-                    compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                    if(!(firstMessage.getNickInput().getText().replaceAll("\\s","").equals("")))
+                    {
+                        compareAndSetScoresInTop3(firstMessage, secondMessage, booleanArrayList, trueValuesOccurrences);
+                    }
+                }
+                if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W)
+                {
+                    firstMessage.getOkButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
+                {
+                    firstMessage.getOkButton().requestFocus();
                 }
             }
         });
@@ -496,48 +539,44 @@ public class Tetris
         {
             if(trueValuesOccurrences == 1)
             {
-                MainMenuJFrame.highestScoresJFrame.setScore3(score);
-                MainMenuJFrame.highestScoresJFrame.setNick3(nick);
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(nick, score, 3);
                 MainMenuJFrame.highestScoresJFrame.repaintMainJPanel();
             }
             else if(trueValuesOccurrences == 2)
             {
-                MainMenuJFrame.highestScoresJFrame.setScore3(MainMenuJFrame.highestScoresJFrame.getScore2());
-                MainMenuJFrame.highestScoresJFrame.setNick3(MainMenuJFrame.highestScoresJFrame.getNick2());
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(MainMenuJFrame.highestScoresJFrame.getSecondNick(),
+                MainMenuJFrame.highestScoresJFrame.getSecondScore(), 3);
 
-                MainMenuJFrame.highestScoresJFrame.setScore2(score);
-                MainMenuJFrame.highestScoresJFrame.setNick2(nick);
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(nick, score, 2);
                 MainMenuJFrame.highestScoresJFrame.repaintMainJPanel();
             }
             else if(trueValuesOccurrences == 3)
             {
-                MainMenuJFrame.highestScoresJFrame.setScore3(MainMenuJFrame.highestScoresJFrame.getScore2());
-                MainMenuJFrame.highestScoresJFrame.setNick3(MainMenuJFrame.highestScoresJFrame.getNick2());
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(MainMenuJFrame.highestScoresJFrame.getSecondNick(),
+                        MainMenuJFrame.highestScoresJFrame.getSecondScore(), 3);
 
-                MainMenuJFrame.highestScoresJFrame.setScore2(MainMenuJFrame.highestScoresJFrame.getScore1());
-                MainMenuJFrame.highestScoresJFrame.setNick2(MainMenuJFrame.highestScoresJFrame.getNick1());
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(MainMenuJFrame.highestScoresJFrame.getFirstNick(),
+                        MainMenuJFrame.highestScoresJFrame.getFirstScore(), 2);
 
-                MainMenuJFrame.highestScoresJFrame.setScore1(score);
-                MainMenuJFrame.highestScoresJFrame.setNick1(nick);
+                MainMenuJFrame.highestScoresJFrame.setNickAndScore(nick, score, 1);
+
                 MainMenuJFrame.highestScoresJFrame.repaintMainJPanel();
             }
         }
-        secondMessage.setVisible(true);
         firstMessage.dispose();
+        secondMessage.setVisible(true);
     }
 
     private MessageThatPlayerLostTheGame createMessageThatPlayerLostTheGameAndAddListeners()
     {
 
         MessageThatPlayerLostTheGame secondMessage = new MessageThatPlayerLostTheGame();
-        gameJFrame.setEnabled(false);
 
         secondMessage.getMainMenuButton().addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                gameJFrame.setEnabled(true);
                 secondMessage.dispose();
                 gameJFrame.dispose();
                 new MainMenuJFrame().setVisible(true);
@@ -549,7 +588,6 @@ public class Tetris
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                gameJFrame.setEnabled(true);
                 secondMessage.dispose();
                 resetGame();
                 startGameAgain();
@@ -561,10 +599,134 @@ public class Tetris
             @Override
             public void windowClosing(WindowEvent windowEvent)
             {
-                gameJFrame.setEnabled(true);
                 windowEvent.getWindow().dispose();
             }
         });
+
+        secondMessage.setFocusable(true);
+        secondMessage.getMainMenuButton().setFocusable(true);
+        secondMessage.getTryAgainButton().setFocusable(true);
+        secondMessage.getExitGameButton().setFocusable(true);
+
+        secondMessage.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D ||
+                    e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W)
+                {
+                    secondMessage.getMainMenuButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A ||
+                        e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
+                {
+                    secondMessage.getExitGameButton().requestFocus();
+                }
+            }
+        });
+
+        secondMessage.getExitGameButton().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D)
+                {
+                    secondMessage.getTryAgainButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A)
+                {
+                    secondMessage.getMainMenuButton().requestFocus();
+                }
+                if(e.getKeyCode() ==  KeyEvent.VK_ENTER)
+                {
+                    System.exit(0);
+                }
+            }
+        });
+
+        secondMessage.getTryAgainButton().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D)
+                {
+                    secondMessage.getMainMenuButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A)
+                {
+                    secondMessage.getExitGameButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_ENTER)
+                {
+                    secondMessage.dispose();
+                    resetGame();
+                    startGameAgain();
+                }
+
+            }
+        });
+
+        secondMessage.getMainMenuButton().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D)
+                {
+                    secondMessage.getExitGameButton().requestFocus();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A)
+                {
+                    secondMessage.getTryAgainButton().requestFocus();
+                }
+                if(e.getKeyCode() == KeyEvent.VK_ENTER)
+                {
+                    secondMessage.dispose();
+                    gameJFrame.dispose();
+                    new MainMenuJFrame().setVisible(true);
+                }
+            }
+        });
+
 
         return secondMessage;
     }
@@ -995,7 +1157,7 @@ public class Tetris
             checkIfRowsAreFull();
         }
 
-        private void changeTetriminoPosition()
+        private void changeTetriminoPositionE()
         {
             switch (tetriminoType)
             {
@@ -1003,29 +1165,61 @@ public class Tetris
                     break;
 
                 case 2:
-                    changeTPosition();
+                    changeTPositionE();
                     break;
 
                 case 3:
-                    changeLPosition();
+                    changeLPositionE();
                     break;
 
                 case 4:
-                    changeJPosition();
+                    changeJPositionE();
                     break;
                 case 5:
-                    changeIPosition();
+                    changeIPositionE();
                     break;
                 case 6:
-                    changeSPosition();
+                    changeSPositionE();
                     break;
                 case 7:
-                    changeZPosition();
+                    changeZPositionE();
                     break;
             }
         }
-        
-        private void changeTPosition()
+
+        private void changeTetriminoPositionQ()
+        {
+            switch (tetriminoType)
+            {
+                case 1:
+                    break;
+
+                case 2:
+                    changeTPositionQ();
+                    break;
+
+                case 3:
+                    changeLPositionQ();
+                    break;
+
+                case 4:
+                    changeJPositionQ();
+                    break;
+                case 5:
+                    changeIPositionQ();
+                    break;
+                case 6:
+                    changeSPositionQ();
+                    break;
+                case 7:
+                    changeZPositionQ();
+                    break;
+            }
+        }
+
+        //
+
+        private void changeTPositionE()
         {
             switch (state)
             {
@@ -1046,14 +1240,39 @@ public class Tetris
                     break;
             }
         }
+
+        private void changeTPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeTPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeTPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeTPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeTPositionFrom2To1();
+                    break;
+            }
+        }
+
         private void changeTPositionFrom1To2()
         {
-            if ((Boolean) arrays[secondIndex + 11][booleanIndex])
+            if ((Boolean) arrays[fourthIndex + 9][booleanIndex])
             {
                 changeIndexesToTrue();
                 changeCellsColorToLightGray();
 
-                secondIndex = secondIndex + 11;
+                firstIndex = firstIndex + 11;
+                secondIndex = secondIndex - 9;
+                fourthIndex = fourthIndex + 9;
 
                 changeIndexesToFalse();
                 changeCellsColorAccordingToTheirType();
@@ -1066,12 +1285,14 @@ public class Tetris
         {
             if(checkLeftCells())
             {
-                if ((Boolean) arrays[firstIndex + 9][booleanIndex])
+                if ((Boolean) arrays[fourthIndex - 11][booleanIndex])
                 {
                     changeIndexesToTrue();
                     changeCellsColorToLightGray();
 
                     firstIndex = firstIndex + 9;
+                    secondIndex = secondIndex + 11;
+                    fourthIndex = fourthIndex - 11;
 
                     changeIndexesToFalse();
                     changeCellsColorAccordingToTheirType();
@@ -1083,12 +1304,14 @@ public class Tetris
         }
         private void changeTPositionFrom3To4()
         {
-            if ((Boolean) arrays[fourthIndex - 11][booleanIndex])
+            if ((Boolean) arrays[fourthIndex - 9][booleanIndex])
             {
                 changeIndexesToTrue();
                 changeCellsColorToLightGray();
 
-                fourthIndex = fourthIndex - 11;
+                firstIndex = firstIndex - 11;
+                secondIndex = secondIndex  + 9;
+                fourthIndex = fourthIndex - 9;
 
                 changeIndexesToFalse();
                 changeCellsColorAccordingToTheirType();
@@ -1101,27 +1324,108 @@ public class Tetris
         {
             if(checkRightCells())
             {
-                if ((Boolean) arrays[secondIndex - 9][booleanIndex])
+                if ((Boolean) arrays[fourthIndex + 11][booleanIndex])
                 {
                     changeIndexesToTrue();
                     changeCellsColorToLightGray();
 
-                    secondIndex = secondIndex - 9;
+                    firstIndex = firstIndex - 9;
+                    secondIndex = secondIndex - 11;
+                    fourthIndex = fourthIndex + 11;
 
                     changeIndexesToFalse();
                     changeCellsColorAccordingToTheirType();
 
                     state = 1;
-                    secondIndex = firstIndex;
-                    firstIndex = fourthIndex;
-                    fourthIndex = fourthIndex + 11;
-
                     matrixPanel.repaint();
                 }
             }
         }
 
-        private void changeLPosition()
+        private void changeTPositionFrom1To4()
+        {
+            if ((Boolean) arrays[secondIndex + 11][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex + 9;
+                secondIndex = secondIndex + 11;
+                fourthIndex = fourthIndex - 11;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 4;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeTPositionFrom4To3()
+        {
+            if(checkRightCells())
+            {
+                if ((Boolean) arrays[secondIndex - 9][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 11;
+                    secondIndex = secondIndex - 9;
+                    fourthIndex = fourthIndex + 9;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 3;
+                    gameJFrame.repaint();
+                }
+            }
+        }
+        private void changeTPositionFrom3To2()
+        {
+            if ((Boolean) arrays[secondIndex - 11][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex - 9;
+                secondIndex = secondIndex - 11;
+                fourthIndex = fourthIndex + 11;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeTPositionFrom2To1()
+        {
+            if(checkLeftCells())
+            {
+                if ((Boolean) arrays[secondIndex + 9][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex - 11;
+                    secondIndex = secondIndex + 9;
+                    fourthIndex = fourthIndex - 9;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+
+        //
+
+        //
+
+        private void changeLPositionE()
         {
             switch (state)
             {
@@ -1230,7 +1534,120 @@ public class Tetris
 
         }
 
-        private void changeJPosition()
+        private void changeLPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeLPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeLPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeLPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeLPositionFrom2To1();
+                    break;
+            }
+        }
+        private void changeLPositionFrom1To4()
+        {
+            if((Boolean) arrays[firstIndex + 11][booleanIndex] &&
+               (Boolean) arrays[thirdIndex - 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex - 2][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex + 11;
+                thirdIndex = thirdIndex - 11;
+                fourthIndex = fourthIndex - 2;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 4;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeLPositionFrom4To3()
+        {
+            if(checkRightCells())
+            {
+                if((Boolean) arrays[firstIndex - 9][booleanIndex] &&
+                   (Boolean) arrays[thirdIndex + 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex + 20][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex - 9;
+                    thirdIndex = thirdIndex + 9;
+                    fourthIndex = fourthIndex + 20;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 3;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeLPositionFrom3To2()
+        {
+            if((Boolean) arrays[firstIndex - 11][booleanIndex] &&
+               (Boolean) arrays[thirdIndex + 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex + 2][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex - 11;
+                thirdIndex = thirdIndex + 11;
+                fourthIndex = fourthIndex + 2;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeLPositionFrom2To1()
+        {
+            if(checkLeftCells())
+            {
+                if((Boolean) arrays[firstIndex + 9][booleanIndex] &&
+                   (Boolean) arrays[thirdIndex - 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex - 20][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 9;
+                    thirdIndex = thirdIndex - 9;
+                    fourthIndex = fourthIndex - 20;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+
+        }
+
+        //
+
+        //
+
+        private void changeJPositionE()
         {
             switch (state)
             {
@@ -1338,7 +1755,119 @@ public class Tetris
             }
         }
 
-        private void changeIPosition()
+        private void changeJPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeJPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeJPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeJPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeJPositionFrom2To1();
+                    break;
+            }
+        }
+        private void changeJPositionFrom1To4()
+        {
+            if((Boolean) arrays[firstIndex - 11][booleanIndex] &&
+               (Boolean) arrays[thirdIndex + 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex + 20][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex - 11;
+                thirdIndex = thirdIndex + 11;
+                fourthIndex = fourthIndex + 20;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 4;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeJPositionFrom4To3()
+        {
+            if(checkRightCells())
+            {
+                if((Boolean) arrays[firstIndex + 9][booleanIndex] &&
+                   (Boolean) arrays[thirdIndex  - 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex + 2][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 9;
+                    thirdIndex = thirdIndex - 9;
+                    fourthIndex = fourthIndex + 2;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 3;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeJPositionFrom3To2()
+        {
+            if((Boolean) arrays[firstIndex + 11][booleanIndex] &&
+               (Boolean) arrays[thirdIndex - 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex - 20][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex + 11;
+                thirdIndex = thirdIndex - 11;
+                fourthIndex = fourthIndex - 20;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeJPositionFrom2To1()
+        {
+            if(checkLeftCells())
+            {
+                if((Boolean) arrays[firstIndex - 9][booleanIndex] &&
+                   (Boolean) arrays[thirdIndex + 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex - 2][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex - 9;
+                    thirdIndex = thirdIndex + 9;
+                    fourthIndex = fourthIndex - 2;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+
+        //
+
+        //
+
+        private void changeIPositionE()
         {
             switch (state)
             {
@@ -1456,7 +1985,129 @@ public class Tetris
             }
         }
 
-        private void changeSPosition()
+        private void changeIPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeIPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeIPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeIPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeIPositionFrom2To1();
+                    break;
+            }
+        }
+        private void changeIPositionFrom1To4()
+        {
+            if(firstIndex < 20)
+            {
+            }
+            else
+            {
+                if((Boolean) arrays[firstIndex + 21][booleanIndex] &&
+                   (Boolean) arrays[secondIndex + 10][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex - 12][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 21;
+                    secondIndex = secondIndex + 10;
+                    thirdIndex = thirdIndex  - 1;
+                    fourthIndex = fourthIndex - 12;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 4;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeIPositionFrom4To3()
+        {
+            if(checkITetrimino())
+            {
+                if((Boolean) arrays[firstIndex - 8][booleanIndex] &&
+                   (Boolean) arrays[secondIndex + 1][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex + 19][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex - 8;
+                    secondIndex = secondIndex + 1;
+                    thirdIndex = thirdIndex  + 10;
+                    fourthIndex = fourthIndex + 19;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 3;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeIPositionFrom3To2()
+        {
+            if((Boolean) arrays[firstIndex - 21][booleanIndex] &&
+               (Boolean) arrays[secondIndex - 10][booleanIndex] &&
+               (Boolean) arrays[fourthIndex + 12][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+
+                firstIndex = firstIndex - 21;
+                secondIndex = secondIndex - 10;
+                thirdIndex = thirdIndex  + 1;
+                fourthIndex = fourthIndex + 12;
+
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeIPositionFrom2To1()
+        {
+            if(checkITetrimino())
+            {
+                if((Boolean) arrays[firstIndex + 8][booleanIndex] &&
+                   (Boolean) arrays[secondIndex - 1][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex - 19][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 8;
+                    secondIndex = secondIndex - 1;
+                    thirdIndex = thirdIndex  - 10;
+                    fourthIndex = fourthIndex- 19;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+
+        //
+
+        //
+
+        private void changeSPositionE()
         {
             switch (state)
             {
@@ -1554,8 +2205,111 @@ public class Tetris
                 }
             }
         }
-        
-        private void changeZPosition()
+
+        private void changeSPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeSPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeSPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeSPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeSPositionFrom2To1();
+                    break;
+            }
+        }
+        private void changeSPositionFrom1To4()
+        {
+            if((Boolean) arrays[firstIndex + 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex - 2][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+                firstIndex = firstIndex + 11;
+                thirdIndex = thirdIndex  + 9;
+                fourthIndex = fourthIndex - 2;
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+                state = 4;
+                matrixPanel.repaint();
+            }
+
+        }
+        private void changeSPositionFrom4To3()
+        {
+            if(checkRightCells())
+            {
+                if((Boolean) arrays[firstIndex - 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex + 20][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex - 9;
+                    thirdIndex = thirdIndex  + 11;
+                    fourthIndex = fourthIndex + 20;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 3;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeSPositionFrom3To2()
+        {
+            if((Boolean) arrays[firstIndex - 11][booleanIndex] &&
+               (Boolean) arrays[fourthIndex + 2][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+                firstIndex = firstIndex - 11;
+                thirdIndex = thirdIndex  - 9;
+                fourthIndex = fourthIndex + 2;
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeSPositionFrom2To1()
+        {
+            if(checkLeftCells())
+            {
+                if((Boolean) arrays[firstIndex + 9][booleanIndex] &&
+                   (Boolean) arrays[fourthIndex - 20][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+
+                    firstIndex = firstIndex + 9;
+                    thirdIndex = thirdIndex  - 11;
+                    fourthIndex = fourthIndex - 20;
+
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+
+        //
+
+        //
+
+        private void changeZPositionE()
         {
             switch (state)
             {
@@ -1647,33 +2401,138 @@ public class Tetris
             }
         }
 
+        private void changeZPositionQ()
+        {
+            switch (state)
+            {
+                case 1:
+                    changeZPositionFrom1To4();
+                    break;
+
+                case 4:
+                    changeZPositionFrom4To3();
+                    break;
+
+                case 3:
+                    changeZPositionFrom3To2();
+                    break;
+
+                case 2:
+                    changeZPositionFrom2To1();
+                    break;
+            }
+        }
+        private void changeZPositionFrom1To4()
+        {
+            if((Boolean) arrays[firstIndex + 20][booleanIndex] &&
+               (Boolean) arrays[secondIndex + 9][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+                firstIndex = firstIndex + 20;
+                secondIndex = secondIndex  + 9;
+                fourthIndex = fourthIndex - 11;
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+                state = 4;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeZPositionFrom4To3()
+        {
+            if(checkRightCells())
+            {
+                if((Boolean) arrays[firstIndex + 2][booleanIndex] &&
+                   (Boolean) arrays[secondIndex + 11][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+                    firstIndex = firstIndex + 2;
+                    secondIndex = secondIndex  + 11;
+                    fourthIndex = fourthIndex + 9;
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+                    state = 3;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+        private void changeZPositionFrom3To2()
+        {
+            if((Boolean) arrays[firstIndex - 20][booleanIndex] &&
+               (Boolean) arrays[secondIndex - 9][booleanIndex])
+            {
+                changeIndexesToTrue();
+                changeCellsColorToLightGray();
+                firstIndex = firstIndex - 20;
+                secondIndex = secondIndex  - 9;
+                fourthIndex = fourthIndex + 11;
+                changeIndexesToFalse();
+                changeCellsColorAccordingToTheirType();
+                state = 2;
+                matrixPanel.repaint();
+            }
+        }
+        private void changeZPositionFrom2To1()
+        {
+            if(checkLeftCells())
+            {
+                if((Boolean) arrays[firstIndex - 2][booleanIndex] &&
+                   (Boolean) arrays[secondIndex - 11][booleanIndex])
+                {
+                    changeIndexesToTrue();
+                    changeCellsColorToLightGray();
+                    firstIndex = firstIndex - 2;
+                    secondIndex = secondIndex  - 11;
+                    fourthIndex = fourthIndex - 9;
+                    changeIndexesToFalse();
+                    changeCellsColorAccordingToTheirType();
+                    state = 1;
+                    matrixPanel.repaint();
+                }
+            }
+        }
+
+        //
+
+        //
+
         private class KeysListener implements KeyListener
         {
             public void keyReleased(KeyEvent e)
             {
-                if (e.getKeyCode() == KeyEvent.VK_UP)
+                if (e.getKeyCode() == KeyEvent.VK_E)
                 {
-                    changeTetriminoPosition();
+                    changeTetriminoPositionE();
                 }
-                if (e.getKeyCode() == KeyEvent.VK_RIGHT)
+                if (e.getKeyCode() == KeyEvent.VK_Q)
+                {
+                    changeTetriminoPositionQ();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D)
                 {
                     moveCellsRight();
                 }
-                if (e.getKeyCode() == KeyEvent.VK_LEFT)
+                if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A)
                 {
                     moveCellsLeft();
                 }
-                if (e.getKeyCode() == KeyEvent.VK_DOWN)
+                if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
                 {
                     timer.start();
                 }
+                if(e.getKeyCode() == KeyEvent.VK_MINUS)
+                {
+                    timer.stop();
+                }
+
             }
             public void keyTyped(KeyEvent e)
             {
             }
             public void keyPressed(KeyEvent e)
             {
-                if (e.getKeyCode() == KeyEvent.VK_DOWN)
+                if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S)
                 {
                     timer.stop();
                     moveCellsDown();

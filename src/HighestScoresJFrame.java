@@ -2,10 +2,9 @@ package TetrisGame;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
 
 public class HighestScoresJFrame extends JFrame
 {
@@ -13,13 +12,28 @@ public class HighestScoresJFrame extends JFrame
     private JPanel mainPanel;
     private JButton resetButton;
 
-    private String nick1 = "------------------------";
-    private String nick2 = "------------------------";
-    private String nick3 = "------------------------";
+    private String firstNick;
+    private String secondNick;
+    private String thirdNick;
 
-    private int score1 = 0;
-    private int score2 = 0;
-    private int score3 = 0;
+    private int firstScore;
+    private int secondScore;
+    private int thirdScore;
+
+    private  static final String NICK = "nick";
+    private  static final String SCORE = "score";
+    
+    private  static final String NICK1 = "nick1";
+    private  static final String SCORE1 = "score1";
+    
+    private  static final String NICK2 = "nick2";
+    private  static final String SCORE2 = "score2";
+    
+    private  static final String NICK3 = "nick3";
+    private  static final String SCORE3 = "score3";
+
+    private Properties properties = new Properties();
+    private File propertiesFile = new File("Properties.txt");
 
     public HighestScoresJFrame()
     {
@@ -32,61 +46,140 @@ public class HighestScoresJFrame extends JFrame
     {
         this.setLayout(new GridBagLayout());
         Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setLocation((dimension.width / 2 - 95), (dimension.height / 2 - 100));
-        this.setSize(198, 160);
+        this.setLocation((dimension.width / 2 - (int)(dimension.width / 5.3 / 2)), (dimension.height / 2 -
+                (int)(dimension.width / 10.6 + dimension.width / 53 + dimension.width / 63.6) / 2));
         this.setTitle("Top 3");
         this.setResizable(false);
 
-        addWindowListener(new WindowAdapter() {
+        addWindowListener(new WindowAdapter()
+        {
             @Override
-            public void windowClosing(WindowEvent windowEvent) {
+            public void windowClosing(WindowEvent windowEvent)
+            {
                 windowEvent.getWindow().dispose();
                 new MainMenuJFrame().setVisible(true);
+            }
+        });
+
+        this.setFocusable(true);
+        this.addKeyListener(new KeyListener()
+        {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+                {
+                    highestScoresJFrame.dispose();
+                    new MainMenuJFrame().setVisible(true);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_R)
+                {
+                    resetScores();
+                    repaintMainJPanel();
+                    setVisible(true);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_S ||
+                    e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN)
+                {
+                    resetButton.requestFocus();
+                }
             }
         });
     }
 
     private void createMainPanelAndResetButton()
     {
+        checkCorrectAndSetHighestScores();
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.anchor = GridBagConstraints.CENTER;
         gbc.weighty = 1;
         gbc.weightx = 1;
 
-        JPanel firstPanel = new ScoreJPanel    (new JLabel("1:"),
-                new JLabel(nick1), new JLabel(Integer.toString(score1)));
+        JPanel firstPanel = new ScoreJPanel     (new JLabel("1:"),
+                new JLabel(firstNick), new JLabel(Integer.toString(firstScore)));
         JPanel secondPanel = new ScoreJPanel   (new JLabel("2:"),
-                new JLabel(nick2), new JLabel(Integer.toString(score2)));
+                new JLabel(secondNick), new JLabel(Integer.toString(secondScore)));
         JPanel thirdPanel = new ScoreJPanel    (new JLabel("3:"),
-                new JLabel(nick3), new JLabel(Integer.toString(score3)));
+                new JLabel(thirdNick), new JLabel(Integer.toString(thirdScore)));
 
         mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setPreferredSize(new Dimension(190, 90));
+
+        Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+        int x = dimension.width;
+        if ((x / 133) < 12)
+        {
+            x = 1596;
+        }
+        int mainPanelX = (int) (x / 5.3);
+        int mainPanelY = (int) (x / 10.6);
+
+        mainPanel.setPreferredSize(new Dimension(mainPanelX, mainPanelY));
         mainPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
         gbc.gridy = 0;
         gbc.gridx = 0;
-        gbc.insets = new Insets(10,10,0,0);
         mainPanel.add(firstPanel, gbc);
 
         gbc.gridy = 1;
         gbc.gridx = 0;
-        gbc.insets = new Insets(0,10,0,0);
         mainPanel.add(secondPanel, gbc);
 
         gbc.gridy = 2;
         gbc.gridx = 0;
-        gbc.insets = new Insets(0,10,0,0);
         mainPanel.add(thirdPanel, gbc);
 
-        gbc.insets = new Insets(1,1,0,0);
+        gbc.gridy = 0;
+        gbc.gridx = 0;
         highestScoresJFrame.add(mainPanel, gbc);
 
         resetButton = new JButton("Reset Scores");
-        resetButton.setPreferredSize(new Dimension(152, 26));
+        resetButton.setPreferredSize(new Dimension(mainPanelX / 2, mainPanelX / 12));
+        resetButton.setFont(new Font("Arial", Font.BOLD, x / 133));
         resetButton.addActionListener(new resetButtonListener());
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.insets = new Insets(90,0,0,0);
+
+        resetButton.setFocusable(true);
+        resetButton.addKeyListener(new KeyListener()
+        {
+            @Override
+            public void keyTyped(KeyEvent e)
+            {
+            }
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+            }
+            @Override
+            public void keyReleased(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+                {
+                    highestScoresJFrame.dispose();
+                    new MainMenuJFrame().setVisible(true);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_R || e.getKeyCode() == KeyEvent.VK_ENTER )
+                {
+                    resetScores();
+                    repaintMainJPanel();
+                    setVisible(true);
+                }
+            }
+        });
+
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(mainPanelX / 20,0,mainPanelX / 20,0);
         highestScoresJFrame.add(resetButton, gbc);
+
+        pack();
     }
 
     private class resetButtonListener implements ActionListener
@@ -101,13 +194,234 @@ public class HighestScoresJFrame extends JFrame
 
     private void resetScores()
     {
-        nick1 = "------------------------";
-        nick2 = "------------------------";
-        nick3 = "------------------------";
+        resetPropertiesFile();
+        resetPropertiesVariables();
+    }
 
-        score1 = 0;
-        score2 = 0;
-        score3 = 0;
+    private void resetPropertiesFile()
+    {
+        try
+        {
+            properties.put(NICK1, "------------");
+            properties.put(NICK2, "------------");
+            properties.put(NICK3, "------------");
+            properties.put(SCORE1, "0");
+            properties.put(SCORE2, "0");
+            properties.put(SCORE3, "0");
+
+            FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+            properties.store(fileOutputStream, "");
+        }
+        catch (Exception e)
+        {
+        }
+    }
+
+    private void resetPropertiesVariables()
+    {
+        firstNick = properties.getProperty(NICK1);
+        secondNick = properties.getProperty(NICK2);
+        thirdNick = properties.getProperty(NICK3);
+
+        firstScore = Integer.parseInt(properties.getProperty(SCORE1));
+        secondScore = Integer.parseInt(properties.getProperty(SCORE2));
+        thirdScore = Integer.parseInt(properties.getProperty(SCORE3));
+    }
+
+    private void restorePropertiesFile()
+    {
+        try
+        {
+            if(firstNick == null && secondNick == null && thirdNick == null)
+            {
+                resetPropertiesFile();
+            }
+            else
+            {
+                if(firstNick != null)
+                {
+                    properties.put(NICK1, firstNick);
+                    properties.put(SCORE1, String.valueOf(firstScore));
+                }
+                if(secondNick != null)
+                {
+                    properties.put(NICK2, secondNick);
+                    properties.put(SCORE2, String.valueOf(secondScore));
+                }
+                if(thirdNick != null)
+                {
+                    properties.put(NICK3, thirdNick);
+                    properties.put(SCORE3, String.valueOf(thirdScore));
+                }
+
+                FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+                properties.store(fileOutputStream, "");
+            }
+        }
+        catch (Exception e)
+        {
+        }
+    }
+
+    private boolean checkPropertiesConditions(int number)
+    {
+        if((!properties.containsKey(NICK + number))                        ||
+            !properties.containsKey(SCORE + number)                        ||
+             properties.getProperty(NICK + number).equals("")              ||
+             properties.getProperty(SCORE + number).equals("")             ||
+            !properties.getProperty(SCORE + number).matches("\\d+") ||
+             properties.getProperty(NICK + number).length() > 12          ||
+             properties.getProperty(SCORE + number).length() > 6)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private void checkCorrectAndSetHighestScores()
+    {
+        if(!propertiesFile.exists())
+        {
+            try(PrintWriter writer = new PrintWriter(propertiesFile, "UTF-8");)
+            {
+                restorePropertiesFile();
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        else
+        {
+            try(FileInputStream inputStream = new FileInputStream(propertiesFile))
+            {
+                properties.load(inputStream);
+
+                if(checkPropertiesConditions(1))
+                {
+                    if(firstNick == null)
+                    {
+                        properties.put(NICK1, "------------");
+                        properties.put(SCORE1, "0");
+                    }
+                    else
+                    {
+                        properties.put(NICK1,  firstNick);
+                        properties.put(SCORE1, String.valueOf(firstScore));
+                    }
+
+                    FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+                    properties.store(fileOutputStream, "");
+
+                }
+
+                if(checkPropertiesConditions(2))
+                {
+                    if(secondNick == null)
+                    {
+                        properties.put(NICK2, "------------");
+                        properties.put(SCORE2, "0");
+                    }
+                    else
+                    {
+                        properties.put(NICK2, secondNick);
+                        properties.put(SCORE2, String.valueOf(secondScore));
+                    }
+
+                    FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+                    properties.store(fileOutputStream, "");
+
+                }
+
+                if(checkPropertiesConditions(3))
+                {
+                    if(thirdNick == null)
+                    {
+                        properties.put(NICK3, "------------");
+                        properties.put(SCORE3, "0");
+                    }
+                    else
+                    {
+                        properties.put(NICK3, thirdNick);
+                        properties.put(SCORE3, String.valueOf(thirdScore));
+                    }
+
+                    FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+                    properties.store(fileOutputStream, "");
+
+                }
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        if(!(Integer.parseInt(properties.getProperty(SCORE1)) >= Integer.parseInt(properties.getProperty(SCORE2)) &&
+             Integer.parseInt(properties.getProperty(SCORE2)) >= Integer.parseInt(properties.getProperty(SCORE3))))
+        {
+            Record firstRecord = new Record(1, Integer.parseInt(properties.getProperty(SCORE1)), properties.getProperty(NICK1));
+            Record secondRecord = new Record(2, Integer.parseInt(properties.getProperty(SCORE2)), properties.getProperty(NICK2));
+            Record thirdRecord = new Record(3, Integer.parseInt(properties.getProperty(SCORE3)), properties.getProperty(NICK3));
+
+            ArrayList<Integer> arrayList = new ArrayList<>();
+            arrayList.add(Integer.parseInt(properties.getProperty(SCORE1)));
+            arrayList.add(Integer.parseInt(properties.getProperty(SCORE2)));
+            arrayList.add(Integer.parseInt(properties.getProperty(SCORE3)));
+            Collections.sort(arrayList, Collections.reverseOrder());
+
+            firstRecord.updateRecords(arrayList);
+            secondRecord.updateRecords(arrayList);
+            thirdRecord.updateRecords(arrayList);
+
+            ArrayList<Record> recordArrayList = new ArrayList<>();
+            recordArrayList.add(new Record(0,0,""));
+            recordArrayList.add(new Record(0,0,""));
+            recordArrayList.add(new Record(0,0,""));
+
+            recordArrayList.set((firstRecord.getPosition() - 1), firstRecord);
+            recordArrayList.set((secondRecord.getPosition() - 1), secondRecord);
+            recordArrayList.set((thirdRecord.getPosition() - 1), thirdRecord);
+
+            try(FileInputStream inputStream = new FileInputStream(propertiesFile);)
+            {
+                properties.load(inputStream);
+
+                properties.setProperty(NICK1, recordArrayList.get(0).getNick());
+                properties.setProperty(NICK2, recordArrayList.get(1).getNick());
+                properties.setProperty(NICK3, recordArrayList.get(2).getNick());
+
+                properties.setProperty(SCORE1, Integer.toString(recordArrayList.get(0).getScore()));
+                properties.setProperty(SCORE2, Integer.toString(recordArrayList.get(1).getScore()));
+                properties.setProperty(SCORE3, Integer.toString(recordArrayList.get(2).getScore()));
+
+                FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+                properties.store(fileOutputStream, "");
+
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
+
+        try(FileInputStream inputStream = new FileInputStream(propertiesFile))
+        {
+            properties.load(inputStream);
+
+            firstScore = Integer.parseInt(properties.getProperty(SCORE1));
+            secondScore = Integer.parseInt(properties.getProperty(SCORE2));
+            thirdScore = Integer.parseInt(properties.getProperty(SCORE3));
+
+            firstNick = properties.getProperty(NICK1);
+            secondNick = properties.getProperty(NICK2);
+            thirdNick = properties.getProperty(NICK3);
+        }
+        catch (Exception e)
+        {
+        }
+
     }
 
     public void repaintMainJPanel()
@@ -123,63 +437,59 @@ public class HighestScoresJFrame extends JFrame
         remove(resetButton);
     }
 
-    public String getNick1()
+    public String getFirstNick()
     {
-        return nick1;
+        return firstNick;
     }
 
-    public String getNick2()
+    public String getSecondNick()
     {
-        return nick2;
+        return secondNick;
     }
 
-    public String getNick3()
+    public String getThirdNick()
     {
-        return nick3;
+        return thirdNick;
     }
 
-    public void setNick1(String newNick)
+    public void setNickAndScore(String newNick, int newScore, int number)
     {
-        nick1 = newNick;
+        if(!propertiesFile.exists())
+        {
+            try(PrintWriter writer = new PrintWriter(propertiesFile, "UTF-8"))
+            {
+                restorePropertiesFile();
+            }
+            catch (Exception e)
+            {
+            }
+        }
+        try(FileInputStream fileInputStream = new FileInputStream(propertiesFile))
+        {
+            //properties.load(fileInputStream);
+            FileOutputStream fileOutputStream = new FileOutputStream(propertiesFile);
+            properties.put(NICK + number, newNick);
+            properties.put(SCORE + number, Integer.toString(newScore));
+
+            properties.store(fileOutputStream, null);
+        }
+        catch (Exception e)
+        {
+        }
     }
 
-    public void setNick2(String newNick)
+    public int getFirstScore()
     {
-        nick2 = newNick;
+        return firstScore;
     }
 
-    public void setNick3(String newNick)
+    public int getSecondScore()
     {
-        nick3 = newNick;
+        return secondScore;
     }
 
-    public int getScore1()
+    public int getThirdScore()
     {
-        return score1;
-    }
-
-    public int getScore2()
-    {
-        return score2;
-    }
-
-    public int getScore3()
-    {
-        return score3;
-    }
-
-    public void setScore1(int newScore)
-    {
-        score1 = newScore;
-    }
-
-    public void setScore2(int newScore)
-    {
-        score2 = newScore;
-    }
-
-    public void setScore3(int newScore)
-    {
-        score3 = newScore;
+        return thirdScore;
     }
 }
