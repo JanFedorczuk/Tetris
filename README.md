@@ -4,8 +4,7 @@ Gra logiczna
 
 ## Wymagania
 
-Aby móc skorzystać z Tetrisa, potrzebne jest oprogramowanie `Java SE Runtime Environment 8` oraz 59 kb wolnej pamięci.
-
+Aby móc skorzystać z Tetrisa, potrzebne jest oprogramowanie `Java SE Runtime Environment 8` oraz 59 kb wolnego miejsca na dysku.
 ## Instalacja
 
 Tetris nie wymaga instalacji, po sciągnięciu jest gotowy do użytku. Program do działania wykorzystuje plik tekstowy, który sam tworzy i do którego zapisuje wyniki gier.
